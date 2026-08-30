@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane styleClass="app-root" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.chordata.menuplanner.controller.MainController">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="app-header">
+            <padding>
+                <Insets bottom="14.0" left="20.0" right="20.0" top="14.0"/>
+            </padding>
+            <Label styleClass="app-logo" text="◤"/>
+            <VBox spacing="1.0">
+                <Label styleClass="app-title" text="Menu Planner"/>
+                <Label styleClass="app-subtitle" text="Week planning for school catering menus"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <Tab text="Planner">
+                <fx:include fx:id="plannerContent" source="planner.fxml"/>
+            </Tab>
+            <Tab text="Library">
+                <fx:include fx:id="libraryContent" source="library.fxml"/>
+            </Tab>
+        </TabPane>
+    </center>
+</BorderPane>

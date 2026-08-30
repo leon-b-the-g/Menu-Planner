@@ -1,0 +1,512 @@
+/* ============================================================
+   Menu Planner — stylesheet
+   Palette: warm paper, deep forest green, lime accent.
+   ============================================================ */
+
+.root {
+    /* palette */
+    -paper: #F6F4EC;
+    -surface: #FDFCF7;
+    -line: #E4E1D2;
+    -ink: #1C2B1F;
+    -muted: #57685B;
+    -forest: #1D3B2A;
+    -sage: #4D7C5F;
+    -lime: #84CC16;
+    -lime-dark: #65A30D;
+
+    /* status tints */
+    -good-bg: #EDF5E1;
+    -good-accent: #6DA815;
+    -warn-bg: #FAF0D8;
+    -warn-accent: #D9A21B;
+    -low-bg: #F8E9E3;
+    -low-accent: #C4553B;
+
+    -fx-background-color: -paper;
+    -fx-font-family: "Segoe UI", "Inter", sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: -ink;
+    -fx-focus-color: -lime;
+    -fx-faint-focus-color: #84CC1633;
+    -fx-accent: -lime;
+}
+
+.app-root,
+.tab-content {
+    -fx-background-color: -paper;
+}
+
+/* ------------------------------------------------------------
+   Header, tabs, toolbar
+   ------------------------------------------------------------ */
+
+.app-header {
+    -fx-background-color: -forest;
+}
+
+.app-logo {
+    -fx-text-fill: -lime;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+    -fx-font-family: "Consolas", monospace;
+}
+
+.app-title {
+    -fx-text-fill: white;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-text-fill: #A7C0AE;
+    -fx-font-size: 12px;
+}
+
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color: -surface;
+    -fx-border-color: transparent transparent -line transparent;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8 8 0 0;
+    -fx-padding: 6 16 6 16;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-background-color: -paper;
+    -fx-border-color: -line -line transparent -line;
+    -fx-border-radius: 8 8 0 0;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab .tab-label {
+    -fx-text-fill: -muted;
+    -fx-font-weight: bold;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected .tab-label {
+    -fx-text-fill: -forest;
+}
+
+.tab-pane > .tab-content-area {
+    -fx-background-color: -paper;
+}
+
+.toolbar {
+    -fx-background-color: -surface;
+    -fx-border-color: transparent transparent -line transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.toolbar .label {
+    -fx-text-fill: -muted;
+}
+
+/* ------------------------------------------------------------
+   Buttons & inputs
+   ------------------------------------------------------------ */
+
+.button {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-text-fill: -ink;
+    -fx-padding: 5 12 5 12;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: derive(-surface, -4%);
+    -fx-border-color: -sage;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+}
+
+.btn-primary {
+    -fx-background-color: -lime;
+    -fx-border-color: -lime-dark;
+    -fx-text-fill: -forest;
+    -fx-font-weight: bold;
+}
+
+.btn-primary:hover {
+    -fx-background-color: derive(-lime, 12%);
+}
+
+.btn-nav {
+    -fx-padding: 5 9 5 9;
+    -fx-font-weight: bold;
+    -fx-text-fill: -sage;
+}
+
+.check-box {
+    -fx-text-fill: -ink;
+}
+
+.check-box .box {
+    -fx-background-color: -surface;
+    -fx-background-radius: 4;
+    -fx-border-color: -line;
+    -fx-border-radius: 4;
+}
+
+.check-box:selected .box {
+    -fx-background-color: -lime;
+    -fx-border-color: -lime-dark;
+}
+
+.check-box:selected .mark {
+    -fx-background-color: -forest;
+}
+
+.text-field,
+.date-picker > .text-field,
+.combo-box .list-cell {
+    -fx-text-fill: -ink;
+}
+
+.text-field,
+.combo-box-base,
+.date-picker {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+}
+
+.text-field:focused,
+.combo-box-base:focused,
+.date-picker:focused {
+    -fx-border-color: -lime-dark;
+}
+
+.combo-box > .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: -ink;
+}
+
+.context-menu {
+    -fx-background-color: -surface;
+    -fx-border-color: -line;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.menu-item .label {
+    -fx-text-fill: -ink;
+}
+
+.menu-item:focused {
+    -fx-background-color: -good-bg;
+}
+
+.menu-item:focused .label {
+    -fx-text-fill: -ink;
+}
+
+/* ------------------------------------------------------------
+   Layout containers
+   ------------------------------------------------------------ */
+
+.card {
+    -fx-background-color: -surface;
+    -fx-background-radius: 12;
+    -fx-border-color: -line;
+    -fx-border-radius: 12;
+}
+
+.panel-title {
+    -fx-text-fill: -forest;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+.dim {
+    -fx-text-fill: -muted;
+    -fx-font-size: 12px;
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 0 4 0 4;
+}
+
+/* ------------------------------------------------------------
+   Lists & pills
+   ------------------------------------------------------------ */
+
+.list-view {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-padding: 2;
+}
+
+.list-cell {
+    -fx-background-color: -surface;
+    -fx-text-fill: -ink;
+    -fx-padding: 6 8 6 8;
+    -fx-background-radius: 6;
+}
+
+.list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+.list-cell:hover {
+    -fx-background-color: -good-bg;
+}
+
+.list-cell:selected {
+    -fx-background-color: -forest;
+    -fx-text-fill: white;
+}
+
+.list-cell:selected .perf-name,
+.list-cell:selected .perf-detail {
+    -fx-text-fill: white;
+}
+
+.pill-cell {
+    -fx-background-color: -good-bg;
+    -fx-background-radius: 14;
+    -fx-border-color: -line;
+    -fx-border-radius: 14;
+    -fx-padding: 5 10 5 10;
+    -fx-cursor: open-hand;
+}
+
+.pill-cell:hover {
+    -fx-border-color: -lime-dark;
+}
+
+.pill-cell:selected {
+    -fx-background-color: -forest;
+}
+
+.perf-name {
+    -fx-font-weight: bold;
+    -fx-text-fill: -ink;
+}
+
+.perf-detail {
+    -fx-text-fill: -muted;
+    -fx-font-size: 12px;
+}
+
+.tag-chip {
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-padding: 1 7 1 7;
+    -fx-font-size: 11px;
+}
+
+.tag-chip-remove {
+    -fx-text-fill: -muted;
+    -fx-cursor: hand;
+    -fx-font-size: 10px;
+}
+
+.tag-chip-remove:hover {
+    -fx-text-fill: -low-accent;
+}
+
+.status-label-new {
+    -fx-text-fill: -good-accent;
+    -fx-font-weight: bold;
+}
+
+.status-label-exists {
+    -fx-text-fill: -low-accent;
+    -fx-font-weight: bold;
+}
+
+/* ------------------------------------------------------------
+   Week grid
+   ------------------------------------------------------------ */
+
+.grid-header {
+    -fx-background-color: -forest;
+    -fx-background-radius: 8;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 4 8 4 8;
+}
+
+.grid-slot-label {
+    -fx-background-color: -good-bg;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-text-fill: -forest;
+    -fx-font-weight: bold;
+    -fx-padding: 4 8 4 8;
+}
+
+.plan-cell {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+}
+
+.plan-cell-unavailable {
+    -fx-background-color: derive(-paper, -3%);
+    -fx-border-color: derive(-line, 8%);
+}
+
+.plan-cell-empty .plan-cell-placeholder {
+    -fx-text-fill: derive(-muted, 30%);
+    -fx-font-size: 18px;
+}
+
+.plan-cell-date {
+    -fx-text-fill: -muted;
+    -fx-font-size: 11px;
+}
+
+.plan-cell-editing {
+    -fx-border-color: -lime-dark;
+    -fx-border-width: 2;
+    -fx-background-color: derive(-good-bg, 40%);
+}
+
+.plan-cell-filled {
+    -fx-background-color: -good-bg;
+    -fx-border-color: derive(-good-accent, 40%);
+}
+
+.plan-cell-drop {
+    -fx-border-color: -lime;
+    -fx-border-width: 2;
+    -fx-background-color: derive(-good-bg, 20%);
+}
+
+.cell-menu-name {
+    -fx-text-fill: -ink;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
+.cell-totals {
+    -fx-text-fill: -forest;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.cell-part-row {
+    -fx-background-color: -surface;
+    -fx-background-radius: 6;
+    -fx-border-color: -line;
+    -fx-border-radius: 6;
+    -fx-padding: 3 6 3 6;
+}
+
+.cell-part-name {
+    -fx-text-fill: -ink;
+    -fx-font-size: 12px;
+}
+
+.cell-part-price {
+    -fx-text-fill: -muted;
+    -fx-font-size: 11px;
+}
+
+.cell-grams-field {
+    -fx-padding: 2 4 2 4;
+    -fx-font-size: 12px;
+}
+
+.btn-cell-small {
+    -fx-padding: 1 6 1 6;
+    -fx-font-size: 11px;
+}
+
+.btn-cell-save {
+    -fx-background-color: -lime;
+    -fx-border-color: -lime-dark;
+    -fx-text-fill: -forest;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 3 8 3 8;
+}
+
+.btn-cell-discard,
+.btn-cell-edit {
+    -fx-font-size: 12px;
+    -fx-padding: 3 8 3 8;
+}
+
+.cell-scroll {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.cell-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.sim-badge {
+    -fx-background-color: -good-bg;
+    -fx-background-radius: 10;
+    -fx-border-color: -good-accent;
+    -fx-border-radius: 10;
+    -fx-text-fill: -forest;
+    -fx-font-size: 10px;
+    -fx-padding: 1 6 1 6;
+}
+
+.sim-badge-warn {
+    -fx-background-color: -warn-bg;
+    -fx-border-color: -warn-accent;
+}
+
+/* ------------------------------------------------------------
+   Reports
+   ------------------------------------------------------------ */
+
+.issue-icon {
+    -fx-text-fill: -warn-accent;
+    -fx-font-weight: bold;
+}
+
+.count-badge {
+    -fx-background-color: -forest;
+    -fx-background-radius: 10;
+    -fx-text-fill: white;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 2 8 2 8;
+}
+
+/* ------------------------------------------------------------
+   Scrollbars
+   ------------------------------------------------------------ */
+
+.scroll-bar {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #C9C5B2;
+    -fx-background-radius: 6;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: -sage;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+}

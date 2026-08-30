@@ -1,0 +1,20 @@
+target/
+dependency-reduced-pom.xml
+*.class
+*.jar
+!.mvn/wrapper/*.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Exports produced while testing
+*.xlsx
