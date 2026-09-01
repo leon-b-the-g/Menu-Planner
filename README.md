@@ -1,5 +1,7 @@
 # Menu Planner
 
+[![build](https://github.com/leon-b-the-g/Menu-Planner/actions/workflows/build.yml/badge.svg)](https://github.com/leon-b-the-g/Menu-Planner/actions/workflows/build.yml)
+
 A JavaFX week planner for a school-catering kitchen: build menus from a recipe library,
 drag them onto a slot × weekday grid, watch costs and allergens roll up live, and let the
 built-in analytics warn you when the same meal shows up too often.
