@@ -8,10 +8,14 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
@@ -26,77 +30,95 @@
             <Button fx:id="buttonPrevWeek" styleClass="btn-nav" text="&#8249;"/>
             <Button fx:id="buttonThisWeek" text="This week"/>
             <Button fx:id="buttonNextWeek" styleClass="btn-nav" text="&#8250;"/>
-            <DatePicker fx:id="datePickerWeek" prefWidth="130.0"/>
-            <Label fx:id="labelWeek" styleClass="panel-title" text=""/>
+            <DatePicker fx:id="datePickerWeek" prefWidth="140.0"/>
+            <Label fx:id="labelWeek" styleClass="toolbar-week-label" text=""/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="buttonArrange" text="&#10530; Arrange"/>
+            <ToggleButton fx:id="toggleBlocks" selected="true" text="&#9703; Blocks"/>
+            <ToggleButton fx:id="toggleReports" selected="true" text="Reports &#9707;"/>
             <Button fx:id="buttonExport" text="Export XLSX"/>
         </HBox>
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.2, 0.79">
+        <SplitPane fx:id="splitMain" dividerPositions="0.2, 0.79">
             <padding>
                 <Insets bottom="12.0" left="12.0" right="12.0" top="8.0"/>
             </padding>
 
             <!-- Building blocks -->
-            <VBox spacing="6.0" styleClass="card" minWidth="200.0">
+            <VBox fx:id="leftPanel" spacing="4.0" styleClass="card" minWidth="190.0">
                 <padding>
-                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                    <Insets bottom="10.0" left="10.0" right="10.0" top="6.0"/>
                 </padding>
-                <Label styleClass="panel-title" text="Compositions"/>
-                <TextField fx:id="textFieldCompSearch" promptText="Search…"/>
-                <ListView fx:id="listViewCompositions" VBox.vgrow="ALWAYS"/>
-                <Label styleClass="panel-title" text="Recipes"/>
-                <TextField fx:id="textFieldRecipeSearch" promptText="Search…"/>
-                <ListView fx:id="listViewRecipes" VBox.vgrow="ALWAYS"/>
+                <TitledPane fx:id="paneCompositions" styleClass="section-pane" text="Compositions"
+                            maxHeight="Infinity" VBox.vgrow="ALWAYS">
+                    <VBox spacing="6.0">
+                        <TextField fx:id="textFieldCompSearch" promptText="Search…"/>
+                        <ListView fx:id="listViewCompositions" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </TitledPane>
+                <TitledPane fx:id="paneRecipes" styleClass="section-pane" text="Recipes"
+                            maxHeight="Infinity" VBox.vgrow="ALWAYS">
+                    <VBox spacing="6.0">
+                        <TextField fx:id="textFieldRecipeSearch" promptText="Search…"/>
+                        <ListView fx:id="listViewRecipes" VBox.vgrow="ALWAYS"/>
+                    </VBox>
+                </TitledPane>
                 <Label styleClass="dim" text="Drag onto a cell to plan" wrapText="true"/>
             </VBox>
 
             <!-- Week grid -->
-            <VBox spacing="6.0" styleClass="card" minWidth="400.0">
+            <VBox fx:id="centerPanel" spacing="6.0" styleClass="card" minWidth="380.0">
                 <padding>
                     <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                 </padding>
-                <GridPane fx:id="gridPlan" hgap="4.0" vgap="4.0" VBox.vgrow="ALWAYS"/>
+                <VBox fx:id="vboxGrid" spacing="4.0" VBox.vgrow="ALWAYS"/>
             </VBox>
 
             <!-- Reports -->
-            <VBox spacing="10.0" minWidth="220.0">
-                <VBox spacing="6.0" styleClass="card" VBox.vgrow="ALWAYS">
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-                    </padding>
-                    <Label styleClass="panel-title" text="This week's issues"/>
-                    <ScrollPane fitToWidth="true" styleClass="cell-scroll" VBox.vgrow="ALWAYS">
+            <VBox fx:id="rightPanel" spacing="4.0" styleClass="card" minWidth="200.0">
+                <padding>
+                    <Insets bottom="10.0" left="10.0" right="10.0" top="6.0"/>
+                </padding>
+                <TitledPane fx:id="paneIssues" styleClass="section-pane" text="This week's issues"
+                            maxHeight="Infinity" VBox.vgrow="ALWAYS">
+                    <ScrollPane fitToWidth="true" styleClass="cell-scroll">
                         <VBox fx:id="vboxIssues" spacing="4.0">
                             <padding>
                                 <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
                             </padding>
                         </VBox>
                     </ScrollPane>
-                </VBox>
-                <VBox spacing="6.0" styleClass="card" VBox.vgrow="ALWAYS">
-                    <padding>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
-                    </padding>
-                    <Label styleClass="panel-title" text="Repetition report"/>
-                    <HBox alignment="CENTER_LEFT" spacing="6.0">
-                        <Label styleClass="dim" text="From"/>
-                        <DatePicker fx:id="datePickerRepFrom" prefWidth="120.0" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <HBox alignment="CENTER_LEFT" spacing="6.0">
-                        <Label styleClass="dim" text="To"/>
-                        <DatePicker fx:id="datePickerRepTo" prefWidth="120.0" HBox.hgrow="ALWAYS"/>
-                    </HBox>
-                    <ScrollPane fitToWidth="true" styleClass="cell-scroll" VBox.vgrow="ALWAYS">
-                        <VBox fx:id="vboxRepetition" spacing="4.0">
-                            <padding>
-                                <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
-                            </padding>
-                        </VBox>
-                    </ScrollPane>
-                </VBox>
+                </TitledPane>
+                <TitledPane fx:id="paneRepetition" styleClass="section-pane" text="Repetition report"
+                            maxHeight="Infinity" VBox.vgrow="ALWAYS">
+                    <VBox spacing="6.0">
+                        <GridPane hgap="8.0" vgap="6.0">
+                            <columnConstraints>
+                                <ColumnConstraints minWidth="40.0" prefWidth="44.0"/>
+                                <ColumnConstraints hgrow="ALWAYS"/>
+                            </columnConstraints>
+                            <rowConstraints>
+                                <RowConstraints/>
+                                <RowConstraints/>
+                            </rowConstraints>
+                            <Label styleClass="dim" text="From" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <DatePicker fx:id="datePickerRepFrom" maxWidth="Infinity"
+                                        GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+                            <Label styleClass="dim" text="To" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <DatePicker fx:id="datePickerRepTo" maxWidth="Infinity"
+                                        GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                        </GridPane>
+                        <ScrollPane fitToWidth="true" styleClass="cell-scroll" VBox.vgrow="ALWAYS">
+                            <VBox fx:id="vboxRepetition" spacing="4.0">
+                                <padding>
+                                    <Insets bottom="4.0" left="4.0" right="4.0" top="4.0"/>
+                                </padding>
+                            </VBox>
+                        </ScrollPane>
+                    </VBox>
+                </TitledPane>
             </VBox>
         </SplitPane>
     </center>

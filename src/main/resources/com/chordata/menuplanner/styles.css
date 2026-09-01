@@ -184,6 +184,78 @@
     -fx-border-color: -lime-dark;
 }
 
+/* Date picker: forest calendar button + CI-styled popup */
+
+.date-picker > .arrow-button {
+    -fx-background-color: -forest;
+    -fx-background-radius: 0 7 7 0;
+    -fx-cursor: hand;
+}
+
+.date-picker > .arrow-button:hover {
+    -fx-background-color: derive(-forest, 20%);
+}
+
+.date-picker > .arrow-button > .arrow {
+    -fx-background-color: -lime;
+}
+
+.date-picker-popup {
+    -fx-background-color: -surface;
+    -fx-border-color: -line;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+}
+
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: -forest;
+    -fx-background-radius: 8 8 0 0;
+}
+
+.date-picker-popup > .month-year-pane .label {
+    -fx-text-fill: white;
+}
+
+.date-picker-popup > .month-year-pane .spinner .button > .left-arrow,
+.date-picker-popup > .month-year-pane .spinner .button > .right-arrow {
+    -fx-background-color: -lime;
+}
+
+.date-picker-popup > * > .day-name-cell,
+.date-picker-popup > * > .week-number-cell {
+    -fx-text-fill: -muted;
+}
+
+.date-picker-popup > * > .day-cell {
+    -fx-background-color: -surface;
+    -fx-text-fill: -ink;
+}
+
+.date-picker-popup > * > .day-cell:hover {
+    -fx-background-color: -good-bg;
+}
+
+.date-picker-popup > * > .day-cell:focused {
+    -fx-background-color: -good-bg;
+}
+
+.date-picker-popup > * > .selected,
+.date-picker-popup > * > .day-cell:selected {
+    -fx-background-color: -lime;
+    -fx-text-fill: -forest;
+    -fx-font-weight: bold;
+}
+
+.date-picker-popup > * > .previous-month,
+.date-picker-popup > * > .next-month {
+    -fx-text-fill: derive(-muted, 35%);
+}
+
+.date-picker-popup > * > .today {
+    -fx-border-color: -lime-dark;
+    -fx-border-width: 1;
+}
+
 .combo-box > .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: -ink;
@@ -221,8 +293,47 @@
 
 .panel-title {
     -fx-text-fill: -forest;
-    -fx-font-size: 13px;
+    -fx-font-size: 16px;
     -fx-font-weight: bold;
+}
+
+.toolbar-week-label {
+    -fx-text-fill: -forest;
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}
+
+/* Collapsible sections: transparent TitledPanes with CI titles */
+
+.section-pane {
+    -fx-background-color: transparent;
+    -fx-text-fill: -forest;
+}
+
+.section-pane > .title {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent -line transparent;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 4 2 6 2;
+}
+
+.section-pane > .title > .text {
+    -fx-fill: -forest;
+}
+
+.section-pane:focused > .title {
+    -fx-color: transparent;
+}
+
+.section-pane > .title > .arrow-button > .arrow {
+    -fx-background-color: -forest;
+}
+
+.section-pane > *.content {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 6 0 0 0;
 }
 
 .dim {
@@ -238,6 +349,26 @@
 .split-pane > .split-pane-divider {
     -fx-background-color: transparent;
     -fx-padding: 0 4 0 4;
+}
+
+/* Week grid splits: slim dividers the user can grab to resize columns/rows */
+
+.grid-col-split {
+    -fx-background-color: transparent;
+}
+
+.grid-col-split > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 0 2 0 2;
+}
+
+.grid-rows-split {
+    -fx-background-color: transparent;
+}
+
+.grid-rows-split > .split-pane-divider {
+    -fx-background-color: transparent;
+    -fx-padding: 2 0 2 0;
 }
 
 /* ------------------------------------------------------------

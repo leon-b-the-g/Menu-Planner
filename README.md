@@ -24,6 +24,12 @@ cost, and allergen codes that must be printed on the published plan.
 
 **Planner tab**
 - Week grid (slot rows × Mon–Fri) with per-slot day availability and week navigation
+- **Resizable grid**: every column and row edge is draggable (all rows stay column-aligned
+  via synced split dividers); **Arrange** resets to an even, legible layout
+- **Focus-on-edit**: opening a cell's editor enlarges that cell's column and row so all of
+  its text is readable; Save/Discard settles the grid back to the arranged layout
+- **Collapsible panels**: each section (Compositions, Recipes, issues, repetition report)
+  folds to its title, and the whole Blocks/Reports side panels can be hidden from the toolbar
 - **Drag & drop** compositions or single recipes onto cells; a composition seeds the in-cell
   editor with its recipes as portion-editable components
 - In-cell menu editor: grams per component, live cost per portion and per menu
@@ -44,6 +50,10 @@ cost, and allergen codes that must be printed on the published plan.
 - Tag assignment per recipe (persisted)
 - **Composition builder**: pick recipes, get the canonical composition id derived from the
   sorted recipe numbers, with **duplicate detection** before saving
+
+The in-cell editor with the grid focused on the edited cell:
+
+![Editing](docs/editing.png)
 
 ![Library](docs/library.png)
 

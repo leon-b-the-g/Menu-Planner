@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.Node;
@@ -29,17 +30,18 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -51,10 +53,12 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -62,6 +66,13 @@ import java.util.Set;
  * Planner tab: the week grid (slot rows × Mon–Fri) with drag-and-drop
  * building blocks, an in-cell menu editor with live cost totals, similarity
  * badges on saved cells, the issues + repetition reports, and Excel export.
+ *
+ * <p>The grid is built from nested SplitPanes — a header column-split above a
+ * vertical split of rows, each row itself a column-split. Every column-split
+ * shares one set of divider positions, so dragging any column edge moves the
+ * whole column; row heights are the vertical split's own dividers. "Arrange"
+ * resets both to an even layout, and opening a cell editor enlarges that
+ * cell's column and row so its content is fully legible.</p>
  */
 public class PlannerController {
 
@@ -71,7 +82,20 @@ public class PlannerController {
     @FXML private Button buttonThisWeek;
     @FXML private DatePicker datePickerWeek;
     @FXML private Label labelWeek;
+    @FXML private Button buttonArrange;
+    @FXML private ToggleButton toggleBlocks;
+    @FXML private ToggleButton toggleReports;
     @FXML private Button buttonExport;
+
+    // Panels
+    @FXML private SplitPane splitMain;
+    @FXML private VBox leftPanel;
+    @FXML private VBox centerPanel;
+    @FXML private VBox rightPanel;
+    @FXML private TitledPane paneCompositions;
+    @FXML private TitledPane paneRecipes;
+    @FXML private TitledPane paneIssues;
+    @FXML private TitledPane paneRepetition;
 
     // Building blocks
     @FXML private TextField textFieldCompSearch;
@@ -80,7 +104,7 @@ public class PlannerController {
     @FXML private ListView<Recipe> listViewRecipes;
 
     // Grid + reports
-    @FXML private GridPane gridPlan;
+    @FXML private VBox vboxGrid;
     @FXML private VBox vboxIssues;
     @FXML private DatePicker datePickerRepFrom;
     @FXML private DatePicker datePickerRepTo;
@@ -91,6 +115,12 @@ public class PlannerController {
     private static final DateTimeFormatter DAY_FORMAT = DateTimeFormatter.ofPattern("dd.MM.");
     private static final DateTimeFormatter FULL_FORMAT = DateTimeFormatter.ofPattern("dd MMM yyyy");
     private static final String[] WEEKDAY_LABELS = {"Mon", "Tue", "Wed", "Thu", "Fri"};
+
+    /** Slot-label column share of the grid width. */
+    private static final double SLOT_COL_FRACTION = 0.13;
+    /** Grid share given to the focused cell's weekday column / slot row while editing. */
+    private static final double FOCUS_COL_SHARE = 0.5;
+    private static final double FOCUS_ROW_SHARE = 0.55;
 
     private Stage stage;
     private CatalogService catalog;
@@ -107,12 +137,24 @@ public class PlannerController {
     private Map<CellKey, Double> similarityScores = Map.of();
 
     /** Transient editor state of cells currently being edited (not yet saved). */
-    private final Map<CellKey, EditingCell> editingCells = new java.util.HashMap<>();
+    private final Map<CellKey, EditingCell> editingCells = new HashMap<>();
+
+    /** Shared column-divider positions for the week grid (header + every row stay aligned). */
+    private double[] colDividerPositions;
+    private final List<SplitPane> columnSplits = new ArrayList<>();
+    private boolean syncingColumns = false;
+
+    /** The vertical row split of the current grid build. */
+    private SplitPane gridRowsSplit;
+    /** Row-divider positions carried across grid rebuilds (null = equal rows). */
+    private double[] rowDividerPositions;
 
     private static class EditingCell {
         String name = "";
         final List<MenuPart> parts = new ArrayList<>();
     }
+
+    private enum DropResult { NONE, NEW_EDIT, ALTERATION }
 
     public void postInitialize(Stage stage, CatalogService catalog, PlanRepository repository,
                                AnalyticsService analytics, ExcelExportService exporter) {
@@ -124,6 +166,7 @@ public class PlannerController {
 
         weekMonday = mondayOf(LocalDate.now());
         initializeToolbar();
+        initializePanels();
         initializeBuildingBlocks();
         initializeRepetitionReport();
         rebuildAll();
@@ -156,6 +199,8 @@ public class PlannerController {
             datePickerWeek.setValue(weekMonday);
             rebuildAll();
         });
+        buttonArrange.setOnAction(e -> arrangeGrid());
+        buttonArrange.setTooltip(new Tooltip("Reset the grid to even columns and rows"));
         buttonExport.setOnAction(e -> exportExcel());
     }
 
@@ -170,6 +215,50 @@ public class PlannerController {
         labelWeek.setText("CW " + weekMonday.get(wf.weekOfWeekBasedYear())
                 + "  ·  " + weekMonday.format(FULL_FORMAT)
                 + " – " + weekMonday.plusDays(4).format(FULL_FORMAT));
+    }
+
+    // ------------------------------------------------------------------
+    // Panels: collapsible sections + hideable side panels
+    // ------------------------------------------------------------------
+
+    private void initializePanels() {
+        bindSectionGrow(paneCompositions);
+        bindSectionGrow(paneRecipes);
+        bindSectionGrow(paneIssues);
+        bindSectionGrow(paneRepetition);
+
+        toggleBlocks.setTooltip(new Tooltip("Show / hide the building blocks panel"));
+        toggleReports.setTooltip(new Tooltip("Show / hide the reports panel"));
+        toggleBlocks.setOnAction(e -> applyPanelVisibility());
+        toggleReports.setOnAction(e -> applyPanelVisibility());
+    }
+
+    /** A collapsed section keeps only its title bar; the expanded one takes the space. */
+    private static void bindSectionGrow(TitledPane pane) {
+        VBox.setVgrow(pane, pane.isExpanded() ? Priority.ALWAYS : Priority.NEVER);
+        pane.expandedProperty().addListener((obs, o, expanded) ->
+                VBox.setVgrow(pane, expanded ? Priority.ALWAYS : Priority.NEVER));
+    }
+
+    /** Adds/removes the side panels from the main split and re-seats the dividers. */
+    private void applyPanelVisibility() {
+        boolean left = toggleBlocks.isSelected();
+        boolean right = toggleReports.isSelected();
+        splitMain.getItems().clear();
+        if (left) {
+            splitMain.getItems().add(leftPanel);
+        }
+        splitMain.getItems().add(centerPanel);
+        if (right) {
+            splitMain.getItems().add(rightPanel);
+        }
+        if (left && right) {
+            splitMain.setDividerPositions(0.2, 0.79);
+        } else if (left) {
+            splitMain.setDividerPositions(0.22);
+        } else if (right) {
+            splitMain.setDividerPositions(0.74);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -261,7 +350,7 @@ public class PlannerController {
     }
 
     // ------------------------------------------------------------------
-    // Week grid
+    // Week grid (nested SplitPanes with synced column dividers)
     // ------------------------------------------------------------------
 
     private void rebuildAll() {
@@ -272,61 +361,214 @@ public class PlannerController {
         refreshRepetitionReport();
     }
 
-    private void rebuildGrid() {
-        gridPlan.getChildren().clear();
-        gridPlan.getColumnConstraints().clear();
-        gridPlan.getRowConstraints().clear();
+    /**
+     * "Arrange": reset to even columns and equal row heights, then refresh
+     * everything. Also runs automatically after save/discard/new-edit so the
+     * grid always settles into a legible layout.
+     */
+    private void arrangeGrid() {
+        similarityScores = analytics.similarityScores(weekMonday);
+        colDividerPositions = defaultColDividers();
+        rebuildGrid();
+        // rebuildGrid carries the pre-reset row heights over; drop them so the rows equalize.
+        rowDividerPositions = null;
+        equalizeRows();
+        refreshIssues();
+        refreshRepetitionReport();
+    }
 
-        List<Slot> slots = catalog.getSlots();
-
-        ColumnConstraints slotCol = new ColumnConstraints();
-        slotCol.setPercentWidth(13);
-        gridPlan.getColumnConstraints().add(slotCol);
-        for (int d = 0; d < WEEKDAY_LABELS.length; d++) {
-            ColumnConstraints dayCol = new ColumnConstraints();
-            dayCol.setPercentWidth(87.0 / WEEKDAY_LABELS.length);
-            gridPlan.getColumnConstraints().add(dayCol);
+    private void equalizeRows() {
+        int rows = catalog.getSlots().size();
+        if (gridRowsSplit == null || rows <= 1) {
+            return;
         }
+        double[] positions = new double[rows - 1];
+        for (int i = 0; i < positions.length; i++) {
+            positions[i] = (i + 1.0) / rows;
+        }
+        rowDividerPositions = positions.clone();
+        gridRowsSplit.setDividerPositions(positions);
+    }
 
-        RowConstraints headerRow = new RowConstraints();
-        headerRow.setMinHeight(30);
-        headerRow.setPrefHeight(30);
-        headerRow.setVgrow(Priority.NEVER);
-        gridPlan.getRowConstraints().add(headerRow);
-        for (int s = 0; s < slots.size(); s++) {
-            RowConstraints row = new RowConstraints();
-            row.setVgrow(Priority.ALWAYS);
-            row.setFillHeight(true);
-            row.setMinHeight(90);
-            gridPlan.getRowConstraints().add(row);
+    private void rebuildGrid() {
+        // Carry the current row heights across the rebuild (adding a component inside a
+        // cell must not re-equalize rows the user — or focusCell — has sized).
+        List<Slot> slots = catalog.getSlots();
+        if (gridRowsSplit != null && gridRowsSplit.getDividers().size() == slots.size() - 1) {
+            rowDividerPositions = gridRowsSplit.getDividerPositions().clone();
+        }
+        vboxGrid.getChildren().clear();
+        columnSplits.clear();
+        gridRowsSplit = null;
+        if (colDividerPositions == null) {
+            colDividerPositions = defaultColDividers();
         }
 
         Label corner = new Label("");
         corner.getStyleClass().add("grid-header");
         corner.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
-        gridPlan.add(corner, 0, 0);
+        Node[] headerCells = new Node[WEEKDAY_LABELS.length + 1];
+        headerCells[0] = corner;
         for (int d = 0; d < WEEKDAY_LABELS.length; d++) {
             Label header = new Label(WEEKDAY_LABELS[d] + "  " + weekMonday.plusDays(d).format(DAY_FORMAT));
             header.getStyleClass().add("grid-header");
             header.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             header.setAlignment(Pos.CENTER);
-            gridPlan.add(header, d + 1, 0);
+            headerCells[d + 1] = header;
         }
+        SplitPane headerSplit = buildColumnSplit(headerCells);
+        headerSplit.setMinHeight(32);
+        headerSplit.setMaxHeight(36);
 
-        for (int s = 0; s < slots.size(); s++) {
-            Slot slot = slots.get(s);
+        SplitPane rowsSplit = new SplitPane();
+        rowsSplit.setOrientation(Orientation.VERTICAL);
+        rowsSplit.getStyleClass().add("grid-rows-split");
+        rowsSplit.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        VBox.setVgrow(rowsSplit, Priority.ALWAYS);
+
+        for (Slot slot : slots) {
             Label slotLabel = new Label(slot.name());
             slotLabel.getStyleClass().add("grid-slot-label");
             slotLabel.setWrapText(true);
-            slotLabel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
             slotLabel.setAlignment(Pos.CENTER);
-            gridPlan.add(slotLabel, 0, s + 1);
+            slotLabel.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
+            Node[] rowCells = new Node[WEEKDAY_LABELS.length + 1];
+            rowCells[0] = slotLabel;
             for (int d = 0; d < WEEKDAY_LABELS.length; d++) {
-                LocalDate date = weekMonday.plusDays(d);
-                gridPlan.add(buildCell(date, slot), d + 1, s + 1);
+                rowCells[d + 1] = buildCell(weekMonday.plusDays(d), slot);
+            }
+            SplitPane rowSplit = buildColumnSplit(rowCells);
+            rowSplit.setMinHeight(56);
+            rowsSplit.getItems().add(rowSplit);
+        }
+
+        if (slots.size() > 1) {
+            double[] positions;
+            if (rowDividerPositions != null && rowDividerPositions.length == slots.size() - 1) {
+                positions = rowDividerPositions;
+            } else {
+                positions = new double[slots.size() - 1];
+                for (int i = 0; i < positions.length; i++) {
+                    positions[i] = (i + 1.0) / slots.size();
+                }
+            }
+            rowsSplit.setDividerPositions(positions);
+        }
+
+        vboxGrid.getChildren().addAll(headerSplit, rowsSplit);
+        gridRowsSplit = rowsSplit;
+        applyColumnDividers();
+    }
+
+    /**
+     * Builds one horizontal column-split (slot/corner cell + the 5 weekday
+     * cells) and wires it into the shared column-divider sync.
+     */
+    private SplitPane buildColumnSplit(Node... cells) {
+        SplitPane split = new SplitPane();
+        split.setOrientation(Orientation.HORIZONTAL);
+        split.getStyleClass().add("grid-col-split");
+        for (Node cell : cells) {
+            if (cell instanceof Region region) {
+                region.setMinWidth(30);
+            }
+            split.getItems().add(cell);
+        }
+        if (colDividerPositions != null && split.getDividers().size() == colDividerPositions.length) {
+            split.setDividerPositions(colDividerPositions);
+        }
+        for (SplitPane.Divider divider : split.getDividers()) {
+            divider.positionProperty().addListener((obs, o, n) -> onColumnDividerMoved(split));
+        }
+        columnSplits.add(split);
+        return split;
+    }
+
+    /** A column divider was dragged on one split → mirror its positions everywhere. */
+    private void onColumnDividerMoved(SplitPane source) {
+        if (syncingColumns) {
+            return;
+        }
+        colDividerPositions = source.getDividerPositions().clone();
+        applyColumnDividers();
+    }
+
+    private void applyColumnDividers() {
+        if (colDividerPositions == null) {
+            return;
+        }
+        syncingColumns = true;
+        try {
+            for (SplitPane split : columnSplits) {
+                if (split.getDividers().size() == colDividerPositions.length) {
+                    split.setDividerPositions(colDividerPositions);
+                }
+            }
+        } finally {
+            syncingColumns = false;
+        }
+    }
+
+    /** Even columns: slot label at its fixed share, weekdays sharing the rest. */
+    private double[] defaultColDividers() {
+        double dayFraction = (1.0 - SLOT_COL_FRACTION) / WEEKDAY_LABELS.length;
+        double[] positions = new double[WEEKDAY_LABELS.length];
+        positions[0] = SLOT_COL_FRACTION;
+        for (int i = 1; i < positions.length; i++) {
+            positions[i] = positions[i - 1] + dayFraction;
+        }
+        return positions;
+    }
+
+    /**
+     * Enlarges the focused cell's weekday column and slot row (the others share
+     * the remainder evenly) so an open editor has room for all its text.
+     */
+    private void focusCell(LocalDate date, long slotId) {
+        if (weekMonday == null || gridRowsSplit == null || date == null) {
+            return;
+        }
+        int dayIndex = (int) (date.toEpochDay() - weekMonday.toEpochDay());
+        if (dayIndex < 0 || dayIndex >= WEEKDAY_LABELS.length) {
+            return;
+        }
+
+        double otherFraction = (1.0 - SLOT_COL_FRACTION - FOCUS_COL_SHARE) / (WEEKDAY_LABELS.length - 1);
+        double[] positions = new double[WEEKDAY_LABELS.length];
+        positions[0] = SLOT_COL_FRACTION;
+        double cumulative = positions[0];
+        for (int d = 0; d < WEEKDAY_LABELS.length - 1; d++) {
+            cumulative += (d == dayIndex ? FOCUS_COL_SHARE : otherFraction);
+            positions[d + 1] = cumulative;
+        }
+        colDividerPositions = positions;
+        applyColumnDividers();
+
+        List<Slot> slots = catalog.getSlots();
+        int rows = slots.size();
+        if (rows <= 1) {
+            return;
+        }
+        int rowIndex = -1;
+        for (int s = 0; s < rows; s++) {
+            if (Objects.equals(slots.get(s).id(), slotId)) {
+                rowIndex = s;
+                break;
             }
         }
+        if (rowIndex < 0) {
+            return;
+        }
+        double otherShare = (1.0 - FOCUS_ROW_SHARE) / (rows - 1);
+        double[] rowPositions = new double[rows - 1];
+        double cumulativeRow = 0;
+        for (int r = 0; r < rows - 1; r++) {
+            cumulativeRow += (r == rowIndex ? FOCUS_ROW_SHARE : otherShare);
+            rowPositions[r] = cumulativeRow;
+        }
+        rowDividerPositions = rowPositions.clone();
+        gridRowsSplit.setDividerPositions(rowPositions);
     }
 
     private Node buildCell(LocalDate date, Slot slot) {
@@ -390,10 +632,15 @@ public class PlannerController {
         cell.setOnDragExited(e -> cell.getStyleClass().remove("plan-cell-drop"));
         cell.setOnDragDropped(e -> {
             Dragboard db = e.getDragboard();
-            boolean ok = db.hasString() && handleDrop(key, db.getString());
-            e.setDropCompleted(ok);
+            DropResult result = db.hasString() ? handleDrop(key, db.getString()) : DropResult.NONE;
+            e.setDropCompleted(result != DropResult.NONE);
             e.consume();
-            if (ok) {
+            if (result == DropResult.NEW_EDIT) {
+                // The cell gained a meal: settle the layout, then enlarge it for editing.
+                arrangeGrid();
+                focusCell(key.date(), key.slotId());
+            } else if (result == DropResult.ALTERATION) {
+                // A component was added to an open editor — keep the focused layout.
                 rebuildGrid();
             }
         });
@@ -404,10 +651,10 @@ public class PlannerController {
      * editor with its recipes as grams-editable parts; a recipe adds one part
      * to the open editor (or starts a fresh single-part editor).
      */
-    private boolean handleDrop(CellKey key, String token) {
+    private DropResult handleDrop(CellKey key, String token) {
         int sep = token.indexOf('|');
         if (sep < 0) {
-            return false;
+            return DropResult.NONE;
         }
         String kind = token.substring(0, sep);
         String value = token.substring(sep + 1);
@@ -415,7 +662,7 @@ public class PlannerController {
         if (TOKEN_COMPOSITION.equals(kind)) {
             Composition comp = repository.findComposition(value).orElse(null);
             if (comp == null) {
-                return false;
+                return DropResult.NONE;
             }
             EditingCell editing = new EditingCell();
             editing.name = comp.name();
@@ -424,18 +671,23 @@ public class PlannerController {
                         editing.parts.add(new MenuPart(r.number(), r.name(), r.defaultGrams())));
             }
             editingCells.put(key, editing);
-            return true;
+            return DropResult.NEW_EDIT;
         }
         if (TOKEN_RECIPE.equals(kind)) {
             Recipe recipe = catalog.findRecipe(Long.parseLong(value)).orElse(null);
             if (recipe == null) {
-                return false;
+                return DropResult.NONE;
             }
-            EditingCell editing = editingCells.computeIfAbsent(key, k -> new EditingCell());
+            EditingCell editing = editingCells.get(key);
+            boolean alteration = editing != null && !editing.parts.isEmpty();
+            if (editing == null) {
+                editing = new EditingCell();
+                editingCells.put(key, editing);
+            }
             editing.parts.add(new MenuPart(recipe.number(), recipe.name(), recipe.defaultGrams()));
-            return true;
+            return alteration ? DropResult.ALTERATION : DropResult.NEW_EDIT;
         }
-        return false;
+        return DropResult.NONE;
     }
 
     private void startEditing(CellKey key, PlannedMenu menu) {
@@ -445,7 +697,8 @@ public class PlannerController {
             editing.parts.add(part.copy());
         }
         editingCells.put(key, editing);
-        rebuildGrid();
+        arrangeGrid();
+        focusCell(key.date(), key.slotId());
     }
 
     // ------------------------------------------------------------------
@@ -472,7 +725,7 @@ public class PlannerController {
             }
             rebuildGrid();
         }));
-        attachMenuNameAutocomplete(nameField, loadButton, editing);
+        attachMenuNameAutocomplete(nameField, loadButton);
         updateLoadButton(loadButton, editing.name);
         HBox nameRow = new HBox(4, nameField, loadButton);
         nameRow.setAlignment(Pos.CENTER_LEFT);
@@ -484,7 +737,7 @@ public class PlannerController {
         totals.setAlignment(Pos.CENTER);
         Runnable refreshTotals = () -> totals.setText(liveTotalsText(editing));
         for (MenuPart part : editing.parts) {
-            partsBox.getChildren().add(buildPartRow(key, editing, part, refreshTotals));
+            partsBox.getChildren().add(buildPartRow(editing, part, refreshTotals));
         }
         refreshTotals.run();
         if (editing.parts.isEmpty()) {
@@ -504,7 +757,7 @@ public class PlannerController {
         discard.setMaxWidth(Double.MAX_VALUE);
         discard.setOnAction(e -> {
             editingCells.remove(key);
-            rebuildGrid();
+            arrangeGrid();
         });
         Button save = new Button("✓ Save");
         save.getStyleClass().add("btn-cell-save");
@@ -518,7 +771,7 @@ public class PlannerController {
         return box;
     }
 
-    private Node buildPartRow(CellKey key, EditingCell editing, MenuPart part, Runnable refreshTotals) {
+    private Node buildPartRow(EditingCell editing, MenuPart part, Runnable refreshTotals) {
         HBox row = new HBox(6);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("cell-part-row");
@@ -533,9 +786,11 @@ public class PlannerController {
         gramsField.setPromptText("g");
         gramsField.getStyleClass().add("cell-grams-field");
         gramsField.setPrefWidth(52);
+        gramsField.setMinWidth(40);
 
         Label price = new Label();
         price.getStyleClass().add("cell-part-price");
+        price.setMinWidth(Region.USE_PREF_SIZE);
         Runnable updatePrice = () -> {
             Double cost = repository.currentPriceFor(part);
             price.setText(cost == null ? "–" : formatPrice(cost));
@@ -549,6 +804,7 @@ public class PlannerController {
 
         Button remove = new Button("×");
         remove.getStyleClass().add("btn-cell-small");
+        remove.setMinWidth(Region.USE_PREF_SIZE);
         remove.setTooltip(new Tooltip("Remove component"));
         remove.setOnAction(e -> {
             editing.parts.remove(part);
@@ -577,7 +833,7 @@ public class PlannerController {
         PlannedMenu menu = repository.saveMenu(editing.name, editing.parts);
         repository.assignMenu(key, menu.getId());
         editingCells.remove(key);
-        rebuildAll();
+        arrangeGrid();
     }
 
     /**
@@ -585,7 +841,7 @@ public class PlannerController {
      * typed text; picking one fills the field. The ▼ button shows only when
      * the text exactly matches a saved menu.
      */
-    private void attachMenuNameAutocomplete(TextField field, Button loadButton, EditingCell editing) {
+    private void attachMenuNameAutocomplete(TextField field, Button loadButton) {
         ContextMenu suggestions = new ContextMenu();
         field.textProperty().addListener((obs, o, n) -> {
             updateLoadButton(loadButton, n);
