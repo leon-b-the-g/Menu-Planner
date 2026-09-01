@@ -1,0 +1,16 @@
+# Normalize line endings
+* text=auto
+
+*.java text
+*.xml text
+*.fxml text
+*.css text
+*.md text
+*.properties text
+
+# Wrapper scripts need their native line endings
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
+
+*.png binary
+*.jar binary
