@@ -143,6 +143,30 @@
     -fx-text-fill: -sage;
 }
 
+.toggle-button {
+    -fx-background-color: -surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -line;
+    -fx-border-radius: 8;
+    -fx-text-fill: -muted;
+    -fx-padding: 5 12 5 12;
+    -fx-cursor: hand;
+}
+
+.toggle-button:hover {
+    -fx-border-color: -sage;
+}
+
+.toggle-button:selected {
+    -fx-background-color: -forest;
+    -fx-border-color: -forest;
+    -fx-text-fill: white;
+}
+
+.toggle-button:selected:hover {
+    -fx-background-color: derive(-forest, 15%);
+}
+
 .check-box {
     -fx-text-fill: -ink;
 }
